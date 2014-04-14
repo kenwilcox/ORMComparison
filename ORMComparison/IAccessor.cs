@@ -7,7 +7,7 @@ namespace ORMComparison
     {
         Athlete FindAthlete(long athleteId);
         Athlete[] FindByPosition(string position);
-        Athlete SaveAthlete(ORMComparison.DataContracts.Athlete athlete);
+        Athlete SaveAthlete(Athlete athlete);
         TeamAthletes FindTeamWithAthletes(long teamId);
     }
 }

@@ -36,7 +36,7 @@ namespace ORMComparison
             ef.FindAthlete(id);
             sw.Stop();
             Console.WriteLine("EF find by Id first: {0}", sw.ElapsedMilliseconds);
-            
+
             id = random.Next(3000);
             sw.Reset();
 
@@ -62,7 +62,7 @@ namespace ORMComparison
             Console.WriteLine("Dapper find by Id second: {0}", sw.ElapsedMilliseconds);
 
 
-        }      
+        }
 
         private static void LoadAthletesForPosition()
         {
@@ -97,15 +97,13 @@ namespace ORMComparison
         private static void LoadTeamWithAthletes()
         {
             var sw = new Stopwatch();
-            var random = new Random();
-           
             var ef = new EFAccessor();
             var dapper = new DapperAccessor();
 
             long[] teamIds;
             using (var db = new Context())
             {
-               teamIds = db.Set<Team>().Select(team => team.Id).ToArray();
+                teamIds = db.Set<Team>().Select(team => team.Id).ToArray();
             }
 
             sw.Start();
@@ -122,17 +120,20 @@ namespace ORMComparison
             dapper.FindTeamWithAthletes(teamIds[2]);
             sw.Stop();
             Console.WriteLine("Dapper find Team with Athletes first: {0}", sw.ElapsedMilliseconds);
-        
+
             sw.Restart();
             dapper.FindTeamWithAthletes(teamIds[0]);
             sw.Stop();
             Console.WriteLine("Dapper find Team with Athletes second: {0}", sw.ElapsedMilliseconds);
-        
+
         }
 
         private static void InsertAthletes()
         {
+            var sw = new Stopwatch();
+            var ef = new EFAccessor();
             var dapper = new DapperAccessor();
+
 
             var athlete = new Athlete
             {
@@ -140,7 +141,45 @@ namespace ORMComparison
                 LastName = Guid.NewGuid().ToString(),
                 Position = Guid.NewGuid().ToString(),
             };
+
+            sw.Start();
+            ef.SaveAthlete(athlete);
+            sw.Stop();
+            Console.WriteLine("EF save Athlete first: {0}", sw.ElapsedMilliseconds);
+
+            athlete = new Athlete
+            {
+                FirstName = Guid.NewGuid().ToString(),
+                LastName = Guid.NewGuid().ToString(),
+                Position = Guid.NewGuid().ToString(),
+            };
+
+            sw.Restart();
+            ef.SaveAthlete(athlete);
+            sw.Stop();
+            Console.WriteLine("EF save Athlete second: {0}", sw.ElapsedMilliseconds);
+
+            athlete = new Athlete
+            {
+                FirstName = Guid.NewGuid().ToString(),
+                LastName = Guid.NewGuid().ToString(),
+                Position = Guid.NewGuid().ToString(),
+            };
+            sw.Restart();
             dapper.SaveAthlete(athlete);
+            sw.Stop();
+            Console.WriteLine("Dapper save Athlete first: {0}", sw.ElapsedMilliseconds);
+
+            athlete = new Athlete
+            {
+                FirstName = Guid.NewGuid().ToString(),
+                LastName = Guid.NewGuid().ToString(),
+                Position = Guid.NewGuid().ToString(),
+            };
+            sw.Restart();
+            dapper.SaveAthlete(athlete);
+            sw.Stop();
+            Console.WriteLine("Dapper save Athlete second: {0}", sw.ElapsedMilliseconds);
         }
     }
 }

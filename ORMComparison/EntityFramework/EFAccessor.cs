@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data;
+using System.Data.Entity;
 
 namespace ORMComparison
 {
@@ -14,7 +16,7 @@ namespace ORMComparison
         {
             using (var db = new Context())
             {
-                athlete = db.Set<Athlete>().Add(athlete);
+                db.Entry(athlete).State = athlete.Id == 0 ? EntityState.Added : EntityState.Modified;
                 db.SaveChanges();
             }
             return athlete;
