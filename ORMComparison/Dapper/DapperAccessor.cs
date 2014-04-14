@@ -14,6 +14,7 @@ namespace ORMComparison
     class DapperAccessor : IAccessor
     {
         private string _ConnectionString = ConfigurationManager.ConnectionStrings["Context"].ConnectionString;
+
         public Athlete FindAthlete(long athleteId)
         {
             using (var conn = new SqlConnection(_ConnectionString))
@@ -40,7 +41,7 @@ namespace ORMComparison
                 {
                     conn.Update(athlete);
                 }
-                
+
                 return athlete;
             }
         }
@@ -65,7 +66,7 @@ namespace ORMComparison
                     @"select *
                       from Teams
                       where Id = @Id",
-                      new { Id = teamId}
+                      new { Id = teamId }
                     ).FirstOrDefault();
                 var athletes = conn.Query<Athlete>(
                     @"select Athletes.* 

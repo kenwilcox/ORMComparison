@@ -16,6 +16,5 @@ namespace ORMComparison.DataContracts
         public string LastName { get; set; }
 
         public string Position { get; set; }
-
     }
 }
