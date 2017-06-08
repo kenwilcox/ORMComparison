@@ -11,92 +11,122 @@ namespace ORMComparison
 {
     class Program
     {
+        private static Dictionary<OrmType, List<long>> _results;
+        private static Stopwatch _sw = new Stopwatch();
+
         static void Main(string[] args)
         {
             var seeder = new SeedDB();
             seeder.Seed();
             DapperExtensions.DapperExtensions.DefaultMapper = typeof(PluralizedAutoClassMapper<>);
-
-            LoadOneAthlete();
-            LoadAthletesForPosition();
-            LoadTeamWithAthletes();
-            InsertAthletes();
+            _results = new Dictionary<OrmType, List<long>>();
+            foreach (var i in Enumerable.Range(1, 5))
+            {
+                LoadOneAthlete();
+                LoadAthletesForPosition();
+                LoadTeamWithAthletes();
+                InsertAthletes();
+            }
+            Console.WriteLine("---RESULTS---");
+            foreach(var type in Enum.GetValues(typeof(OrmType)))
+            {
+                Console.WriteLine($"{type}");
+                Console.WriteLine($"average time: {_results[(OrmType)type].Average()}ms");
+                Console.WriteLine($"slowest time: {_results[(OrmType)type].Max()}ms");
+                Console.WriteLine($"fastest time: {_results[(OrmType)type].Min()}ms");
+            }
             Console.ReadKey();
+        }
+
+        private enum OrmType
+        {
+            EntityFramework,
+            Dapper,
+        }        
+
+        private static long Time<T>(Func<long, T> action, long id, OrmType type)
+        {
+            _sw.Reset();
+            _sw.Start();
+            T ret = action(id);
+            _sw.Stop();
+
+            var time = _sw.ElapsedMilliseconds;
+            if (!_results.ContainsKey(type))
+            {
+                _results[type] = new List<long>();
+            }
+            _results[type].Add(time);
+            return time;
+        }
+
+        private static long Time<T>(Func<string, T> action, string id, OrmType type)
+        {
+            _sw.Reset();
+            _sw.Start();
+            T ret = action(id);
+            _sw.Stop();
+
+            var time = _sw.ElapsedMilliseconds;
+            if (!_results.ContainsKey(type))
+            {
+                _results[type] = new List<long>();
+            }
+            _results[type].Add(time);
+            return time;
+        }
+
+        private static long Time(Func<Athlete, Athlete> action, Athlete id, OrmType type)
+        {
+            _sw.Reset();
+            _sw.Start();
+            var ret = action(id);
+            _sw.Stop();
+
+            var time = _sw.ElapsedMilliseconds;
+            if (!_results.ContainsKey(type))
+            {
+                _results[type] = new List<long>();
+            }
+            _results[type].Add(time);
+            return time;
         }
 
         private static void LoadOneAthlete()
         {
-            var sw = new Stopwatch();
             var random = new Random();
             var id = random.Next(3000);
             var ef = new EFAccessor();
             var dapper = new DapperAccessor();
 
-            sw.Start();
-            ef.FindAthlete(id);
-            sw.Stop();
-            Console.WriteLine("EF find by Id first: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("EF find by Id first: {0}", Time(ef.FindAthlete, id, OrmType.EntityFramework));
 
             id = random.Next(3000);
-            sw.Reset();
-
-            sw.Start();
-            ef.FindAthlete(id);
-            sw.Stop();
-            Console.WriteLine("EF find by Id second: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("EF find by Id second: {0}", Time(ef.FindAthlete, id, OrmType.EntityFramework));
 
             id = random.Next(3000);
-            sw.Reset();
-
-            sw.Start();
-            dapper.FindAthlete(id);
-            sw.Stop();
-            Console.WriteLine("Dapper find by Id first: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("Dapper find by Id first: {0}", Time(dapper.FindAthlete, id, OrmType.Dapper));
 
             id = random.Next(3000);
-            sw.Reset();
-
-            sw.Start();
-            dapper.FindAthlete(id);
-            sw.Stop();
-            Console.WriteLine("Dapper find by Id second: {0}", sw.ElapsedMilliseconds);
-
-
+            Console.WriteLine("Dapper find by Id second: {0}", Time(dapper.FindAthlete, id, OrmType.Dapper));
         }
 
         private static void LoadAthletesForPosition()
         {
-            var sw = new Stopwatch();
             var random = new Random();
             var positions = new string[] { "Punter", "Pitcher", "Keeper", "First Base" };
             var ef = new EFAccessor();
             var dapper = new DapperAccessor();
 
-            sw.Start();
-            ef.FindByPosition(positions[0]);
-            sw.Stop();
-            Console.WriteLine("EF find by Position first: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("EF find by Position first: {0}", Time(ef.FindByPosition, positions[0], OrmType.EntityFramework));
+            Console.WriteLine("EF find by Position second: {0}", Time(ef.FindByPosition, positions[1], OrmType.EntityFramework));
 
-            sw.Restart();
-            ef.FindByPosition(positions[1]);
-            sw.Stop();
-            Console.WriteLine("EF find by Position second: {0}", sw.ElapsedMilliseconds);
-
-            sw.Restart();
-            var athletes = dapper.FindByPosition(positions[2]);
-            sw.Stop();
-            Console.WriteLine("Dapper find by Position second: {0}", sw.ElapsedMilliseconds);
-
-            sw.Restart();
-            dapper.FindByPosition(positions[3]);
-            sw.Stop();
-            Console.WriteLine("Dapper find by Position second: {0}", sw.ElapsedMilliseconds);
-
+            Console.WriteLine("Dapper find by Position second: {0}", Time(dapper.FindByPosition, positions[2], OrmType.Dapper));
+            Console.WriteLine("Dapper find by Position second: {0}", Time(dapper.FindByPosition, positions[3], OrmType.Dapper));
         }
 
         private static void LoadTeamWithAthletes()
         {
-            var sw = new Stopwatch();
             var ef = new EFAccessor();
             var dapper = new DapperAccessor();
 
@@ -106,80 +136,34 @@ namespace ORMComparison
                 teamIds = db.Set<Team>().Select(team => team.Id).ToArray();
             }
 
-            sw.Start();
-            ef.FindTeamWithAthletes(teamIds[0]);
-            sw.Stop();
-            Console.WriteLine("EF find Team with Athletes first: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("EF find Team with Athletes first: {0}", Time(ef.FindTeamWithAthletes, teamIds[0], OrmType.EntityFramework));
+            Console.WriteLine("EF find Team with Athletes second: {0}", Time(ef.FindTeamWithAthletes, teamIds[1], OrmType.EntityFramework));
 
-            sw.Restart();
-            ef.FindTeamWithAthletes(teamIds[1]);
-            sw.Stop();
-            Console.WriteLine("EF find Team with Athletes second: {0}", sw.ElapsedMilliseconds);
-
-            sw.Restart();
-            dapper.FindTeamWithAthletes(teamIds[2]);
-            sw.Stop();
-            Console.WriteLine("Dapper find Team with Athletes first: {0}", sw.ElapsedMilliseconds);
-
-            sw.Restart();
-            dapper.FindTeamWithAthletes(teamIds[0]);
-            sw.Stop();
-            Console.WriteLine("Dapper find Team with Athletes second: {0}", sw.ElapsedMilliseconds);
+            Console.WriteLine("Dapper find Team with Athletes first: {0}", Time(dapper.FindTeamWithAthletes, teamIds[2], OrmType.Dapper));
+            Console.WriteLine("Dapper find Team with Athletes second: {0}", Time(dapper.FindTeamWithAthletes, teamIds[0], OrmType.Dapper));
 
         }
 
         private static void InsertAthletes()
         {
-            var sw = new Stopwatch();
             var ef = new EFAccessor();
             var dapper = new DapperAccessor();
 
+            Console.WriteLine("EF save Athlete first: {0}", Time(ef.SaveAthlete, NewAthlete(), OrmType.EntityFramework));
+            Console.WriteLine("EF save Athlete second: {0}", Time(ef.SaveAthlete, NewAthlete(), OrmType.EntityFramework));
 
-            var athlete = new Athlete
+            Console.WriteLine("Dapper save Athlete first: {0}", Time(dapper.SaveAthlete, NewAthlete(), OrmType.Dapper));
+            Console.WriteLine("Dapper save Athlete second: {0}", Time(dapper.SaveAthlete, NewAthlete(), OrmType.Dapper));
+        }
+
+        private static Athlete NewAthlete()
+        {
+            return new Athlete
             {
                 FirstName = Guid.NewGuid().ToString(),
                 LastName = Guid.NewGuid().ToString(),
                 Position = Guid.NewGuid().ToString(),
             };
-
-            sw.Start();
-            ef.SaveAthlete(athlete);
-            sw.Stop();
-            Console.WriteLine("EF save Athlete first: {0}", sw.ElapsedMilliseconds);
-
-            athlete = new Athlete
-            {
-                FirstName = Guid.NewGuid().ToString(),
-                LastName = Guid.NewGuid().ToString(),
-                Position = Guid.NewGuid().ToString(),
-            };
-
-            sw.Restart();
-            ef.SaveAthlete(athlete);
-            sw.Stop();
-            Console.WriteLine("EF save Athlete second: {0}", sw.ElapsedMilliseconds);
-
-            athlete = new Athlete
-            {
-                FirstName = Guid.NewGuid().ToString(),
-                LastName = Guid.NewGuid().ToString(),
-                Position = Guid.NewGuid().ToString(),
-            };
-            sw.Restart();
-            dapper.SaveAthlete(athlete);
-            sw.Stop();
-            Console.WriteLine("Dapper save Athlete first: {0}", sw.ElapsedMilliseconds);
-
-            athlete = new Athlete
-            {
-                FirstName = Guid.NewGuid().ToString(),
-                LastName = Guid.NewGuid().ToString(),
-                Position = Guid.NewGuid().ToString(),
-            };
-            sw.Restart();
-            dapper.SaveAthlete(athlete);
-            sw.Stop();
-            Console.WriteLine("Dapper save Athlete second: {0}", sw.ElapsedMilliseconds);
         }
     }
 }
