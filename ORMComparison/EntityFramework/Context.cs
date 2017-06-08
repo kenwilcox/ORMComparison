@@ -56,7 +56,7 @@ namespace ORMComparison.EntityFramework
                 },
                 new Team
                 {
-                    Name = "Soccer"                
+                    Name = "Soccer"
                 }
             };
 
@@ -88,7 +88,7 @@ namespace ORMComparison.EntityFramework
                         LastName = Guid.NewGuid().ToString(),
                         Position = footballPositions[x % footballPositions.Length]
                     };
-                   footballAthletes.Add(db.Athletes.Add(athlete));                   
+                   footballAthletes.Add(db.Athletes.Add(athlete));
                 }
                 db.SaveChanges();
 
@@ -136,7 +136,7 @@ namespace ORMComparison.EntityFramework
                     {
                         FirstName = Guid.NewGuid().ToString(),
                         LastName = Guid.NewGuid().ToString(),
-                        Position = soccerPositons[x % baseballPositions.Length]
+                        Position = soccerPositons[x % soccerPositons.Length]
                     };
                     soccerAthletes.Add(db.Athletes.Add(athlete));
                 }
